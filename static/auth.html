@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatVibe - Вход/Регистрация</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body class="min-h-screen bg-gray-100 dark:bg-gray-900 text-black dark:text-white flex items-center justify-center">
+<div class="bg-white dark:bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
+    <h1 class="text-3xl font-bold text-center mb-6">ChatVibe</h1>
+    <div id="auth-form">
+        <input type="text" id="username" placeholder="Имя пользователя"
+               class="mb-4 p-2 border rounded w-full dark:bg-gray-700 dark:text-white">
+        <input type="password" id="password" placeholder="Пароль"
+               class="mb-4 p-2 border rounded w-full dark:bg-gray-700 dark:text-white">
+        <div class="flex gap-4">
+            <button onclick="window.login && window.login()"
+                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 flex-1">Войти
+            </button>
+            <button onclick="window.register && window.register()"
+                    class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 flex-1">Регистрация
+            </button>
+        </div>
+    </div>
+</div>
+<script src="/static/js/auth.js" onload="console.log('auth.js script loaded')"
+        onerror="console.error('Failed to load auth.js')"></script>
+</body>
+</html>
