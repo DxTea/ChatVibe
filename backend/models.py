@@ -1,8 +1,10 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Table, \
     Boolean
 from sqlalchemy.orm import relationship
-from database import Base
+
 from datetime import datetime
+
+from backend.database import Base
 
 # Таблица для связи друзей
 friends_table = Table(

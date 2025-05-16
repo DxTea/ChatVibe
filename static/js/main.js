@@ -32,37 +32,48 @@ function removeFile(index) {
 }
 
 async function fetchUserInfo() {
-    const response = await fetch("/users/me", {headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`}});
-    if (response.ok) {
-        currentUser = await response.json();
-        document.getElementById("user-info").textContent = `Пользователь: ${currentUser.username} (ID: ${currentUser.id})`;
-    } else {
+    try {
+        const response = await fetch("/users/me", {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        if (response.ok) {
+            currentUser = await response.json();
+            document.getElementById("user-info").textContent = `Пользователь: ${currentUser.username} (ID: ${currentUser.id})`;
+        } else {
+            throw new Error("Ошибка загрузки данных пользователя");
+        }
+    } catch (error) {
+        console.error("fetchUserInfo:", error);
         alert("Ошибка загрузки данных пользователя");
     }
 }
 
 async function fetchChats() {
-    const [chatsResponse, unreadResponse] = await Promise.all([
-        fetch("/chats", {headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`}}),
-        fetch("/chats/unread", {headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`}})
-    ]);
-    if (!chatsResponse.ok) return;
-    const chats = await chatsResponse.json();
-    const unreadChats = unreadResponse.ok ? await unreadResponse.json() : [];
-    const chatList = document.getElementById("chat-list");
-    chatList.innerHTML = "";
-    chats.forEach(chat => {
-        const div = document.createElement("div");
-        div.className = `p-2 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer flex justify-between items-center ${unreadChats.includes(chat.id) ? 'unread' : ''}`;
-        div.innerHTML = `
-            <span class="flex-1"><span class="unread-indicator"></span>${chat.other_user.username}</span>
-            <button onclick="deleteChat(${chat.id}); event.stopPropagation();" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Удалить</button>
-        `;
-        div.onclick = () => loadChat(chat.id, chat.other_user.username);
-        chatList.appendChild(div);
-    });
-    if (!currentChatId) {
-        showChatPlaceholder();
+    try {
+        const [chatsResponse, unreadResponse] = await Promise.all([
+            fetch("/chats", { headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } }),
+            fetch("/chats/unread", { headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } })
+        ]);
+        if (!chatsResponse.ok) throw new Error("Ошибка загрузки чатов");
+        const chats = await chatsResponse.json();
+        const unreadChats = unreadResponse.ok ? await unreadResponse.json() : [];
+        const chatList = document.getElementById("chat-list");
+        chatList.innerHTML = "";
+        chats.forEach(chat => {
+            const div = document.createElement("div");
+            div.className = `p-2 hover:bg-gray-200 dark:hover:bg-gray-700 cursor-pointer flex justify-between items-center ${unreadChats.includes(chat.id) ? 'unread' : ''}`;
+            div.innerHTML = `
+                <span class="flex-1"><span class="unread-indicator"></span>${chat.other_user.username}</span>
+                <button onclick="deleteChat(${chat.id}); event.stopPropagation();" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Удалить</button>
+            `;
+            div.onclick = () => loadChat(chat.id, chat.other_user.username);
+            chatList.appendChild(div);
+        });
+        if (!currentChatId) {
+            showChatPlaceholder();
+        }
+    } catch (error) {
+        console.error("fetchChats:", error);
     }
 }
 
@@ -84,12 +95,14 @@ async function loadChat(chatId, username) {
     chatArea.innerHTML = "";
     messageInput.style.display = "flex";
 
-    const response = await fetch(`/chats/${chatId}/messages`, {headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`}});
-    if (response.ok) {
+    try {
+        const response = await fetch(`/chats/${chatId}/messages`, {
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        if (!response.ok) throw new Error("Ошибка загрузки сообщений");
         const messages = await response.json();
         let firstUnreadMessageId = null;
 
-        // Отображаем сообщения и ищем первое непрочитанное
         messages.forEach((message, index) => {
             const isUnread = !message.is_read && message.sender.username !== currentUser.username;
             if (isUnread && firstUnreadMessageId === null) {
@@ -101,26 +114,50 @@ async function loadChat(chatId, username) {
             displayMessage(message, messageDiv);
         });
 
-        // Скролл к нужному сообщению
         if (firstUnreadMessageId) {
             const firstUnreadElement = document.getElementById(firstUnreadMessageId);
             if (firstUnreadElement) {
-                firstUnreadElement.scrollIntoView({behavior: 'smooth', block: 'start'});
+                firstUnreadElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         } else {
             chatArea.scrollTop = chatArea.scrollHeight;
         }
-    }
 
-    if (ws) ws.close();
-    ws = new WebSocket(`ws://localhost:8000/chats/${chatId}/ws?token=${localStorage.getItem("token")}`);
-    ws.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        displayMessage(message);
-        if (message.sender.username !== currentUser.username) {
-            fetchChats();
+        // Закрываем старое соединение
+        if (ws) {
+            ws.close();
+            ws = null;
         }
-    };
+
+        // Устанавливаем новое WebSocket-соединение
+        const token = localStorage.getItem("token");
+        console.log("Создание WebSocket с токеном:", token ? token.slice(0, 10) + "..." : "null");
+        ws = new WebSocket(`ws://localhost:8080/chats/${chatId}/ws?token=${token}`);
+        ws.onopen = () => {
+            console.log(`WebSocket открыт для чата ${chatId}`);
+        };
+        ws.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+                console.log("Получено сообщение через WebSocket:", JSON.stringify(message, null, 2));
+                displayMessage(message);
+                if (message.sender.username !== currentUser.username) {
+                    fetchChats(); // Обновляем список чатов для индикатора непрочитанных
+                }
+            } catch (error) {
+                console.error("Ошибка обработки WebSocket-сообщения:", error);
+            }
+        };
+        ws.onerror = (error) => {
+            console.error("WebSocket ошибка:", error);
+        };
+        ws.onclose = (event) => {
+            console.log(`WebSocket закрыт для чата ${chatId}, код: ${event.code}, причина: ${event.reason}`);
+        };
+    } catch (error) {
+        console.error("loadChat:", error);
+        alert("Ошибка загрузки чата");
+    }
 }
 
 function formatTimestamp(timestamp) {
@@ -143,7 +180,7 @@ function displayMessage(message, targetDiv = null) {
     if (message.file_path) {
         const isImage = /\.(jpg|jpeg|png|gif)$/i.test(message.file_path);
         if (isImage) {
-            content += `<br><a href="${message.file_path}" download><img src="${message.file_path}" alt="Image" /></a>`;
+            content += `<br><a href="${message.file_path}" download><img src="${message.file_path}" alt="Image" class="max-w-xs" /></a>`;
         } else {
             content += `<br><a href="${message.file_path}" download class="text-blue-500 underline">Скачать файл: ${message.file_path.split('/').pop()}</a>`;
         }
@@ -169,90 +206,110 @@ function closeAddFriendModal() {
 }
 
 async function sendFriendRequest() {
-    const friendInput = document.getElementById("friend-username").value.trim();
-    if (!friendInput) {
-        alert("Введите имя пользователя или ID");
-        return;
-    }
-    const body = isNaN(friendInput) ? {username: friendInput} : {friend_id: parseInt(friendInput)};
-    const response = await fetch("/friends", {
-        method: "POST",
-        headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json"},
-        body: JSON.stringify(body)
-    });
-    if (response.ok) {
-        const chat = await response.json();
-        alert("Чат создан!");
-        await fetchChats();
-        loadChat(chat.id, chat.other_user.username);
-        closeAddFriendModal();
-    } else {
-        alert("Ошибка: " + (await response.text()));
+    try {
+        const friendInput = document.getElementById("friend-username").value.trim();
+        if (!friendInput) {
+            alert("Введите имя пользователя или ID");
+            return;
+        }
+        const body = isNaN(friendInput) ? { username: friendInput } : { friend_id: parseInt(friendInput) };
+        const response = await fetch("/friends", {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}`, "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        });
+        if (response.ok) {
+            const chat = await response.json();
+            alert("Чат создан!");
+            await fetchChats();
+            loadChat(chat.id, chat.other_user.username);
+            closeAddFriendModal();
+        } else {
+            throw new Error(await response.text());
+        }
+    } catch (error) {
+        console.error("sendFriendRequest:", error);
+        alert("Ошибка добавления друга: " + error.message);
     }
 }
 
 async function searchChat(event) {
     if (event.key !== "Enter") return;
-    const searchInput = document.getElementById("chat-search").value.trim().toLowerCase();
-    if (!searchInput) {
-        fetchChats();
-        return;
-    }
-    const response = await fetch("/chats", {headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`}});
-    if (!response.ok) return;
-    const chats = await response.json();
-    const matchingChat = chats.find(chat => chat.other_user.username.toLowerCase() === searchInput);
-    if (matchingChat) {
-        loadChat(matchingChat.id, matchingChat.other_user.username);
-    } else {
-        alert("Такого чата нет");
-        document.getElementById("chat-search").value = "";
-        fetchChats();
+    try {
+        const searchInput = document.getElementById("chat-search").value.trim().toLowerCase();
+        if (!searchInput) {
+            fetchChats();
+            return;
+        }
+        const response = await fetch("/chats", { headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` } });
+        if (!response.ok) throw new Error("Ошибка поиска чата");
+        const chats = await chatsResponse.json();
+        const matchingChat = chats.find(chat => chat.other_user.username.toLowerCase() === searchInput);
+        if (matchingChat) {
+            loadChat(matchingChat.id, matchingChat.other_user.username);
+        } else {
+            alert("Такого чата нет");
+            document.getElementById("chat-search").value = "";
+            fetchChats();
+        }
+    } catch (error) {
+        console.error("searchChat:", error);
     }
 }
 
 async function sendMessage() {
-    const messageText = document.getElementById("message").value.trim();
-    if (!currentChatId || (!messageText && selectedFiles.length === 0)) return;
+    try {
+        const messageText = document.getElementById("message").value.trim();
+        if (!currentChatId || (!messageText && selectedFiles.length === 0)) return;
 
-    const formData = new FormData();
-    formData.append("message_text", messageText);
-    selectedFiles.forEach((file) => {
-        formData.append("files", file);
-    });
+        const formData = new FormData();
+        formData.append("message_text", messageText);
+        selectedFiles.forEach((file) => {
+            formData.append("files", file);
+        });
 
-    const response = await fetch(`/chats/${currentChatId}/messages`, {
-        method: "POST",
-        headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`},
-        body: formData
-    });
+        const response = await fetch(`/chats/${currentChatId}/messages`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` },
+            body: formData
+        });
 
-    if (response.ok) {
-        document.getElementById("message").value = "";
-        selectedFiles = [];
-        updateFileList();
-        await fetchChats();
-    } else {
-        alert("Ошибка отправки сообщения: " + (await response.text()));
+        if (response.ok) {
+            const messages = await response.json();
+            document.getElementById("message").value = "";
+            selectedFiles = [];
+            updateFileList();
+            await fetchChats();
+        } else {
+            throw new Error(await response.text());
+        }
+    } catch (error) {
+        console.error("sendMessage:", error);
+        alert("Ошибка отправки сообщения: " + error.message);
     }
 }
 
 async function deleteChat(chatId) {
-    if (!confirm("Вы уверены, что хотите удалить этот чат?")) return;
-    const response = await fetch(`/chats/${chatId}`, {
-        method: "DELETE",
-        headers: {"Authorization": `Bearer ${localStorage.getItem("token")}`}
-    });
-    if (response.ok) {
-        alert("Чат удален!");
-        if (currentChatId === chatId) {
-            currentChatId = null;
-            showChatPlaceholder();
-            if (ws) ws.close();
+    try {
+        if (!confirm("Вы уверены, что хотите удалить этот чат?")) return;
+        const response = await fetch(`/chats/${chatId}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
+        });
+        if (response.ok) {
+            alert("Чат удалён!");
+            if (currentChatId === chatId) {
+                currentChatId = null;
+                showChatPlaceholder();
+                if (ws) ws.close();
+            }
+            await fetchChats();
+        } else {
+            throw new Error(await response.text());
         }
-        await fetchChats();
-    } else {
-        alert("Ошибка: " + (await response.text()));
+    } catch (error) {
+        console.error("deleteChat:", error);
+        alert("Ошибка удаления чата: " + error.message);
     }
 }
 
