@@ -1,0 +1,270 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+input, button {
+    transition: all 0.3s ease;
+}
+
+.hover\:bg-blue-600:hover {
+    background-color: #2563eb;
+}
+
+.hover\:bg-red-600:hover {
+    background-color: #dc2626;
+}
+
+.hover\:bg-gray-600:hover {
+    background-color: #4b5563;
+}
+
+.dark\:bg-gray-700 {
+    background-color: #374151;
+}
+
+.dark\:text-white {
+    color: #ffffff;
+}
+
+.ml-auto {
+    margin-left: auto;
+}
+
+.mr-auto {
+    margin-right: auto;
+}
+
+.bg-blue-100 {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.bg-gray-100 {
+    background-color: #f3f4f6;
+    color: #1f2937;
+}
+
+.message {
+    display: flex;
+    flex-direction: column;
+    width: fit-content;
+    max-width: 50%;
+    margin-bottom: 8px;
+    padding: 8px;
+    border-radius: 8px;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.message-content {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.message-text {
+    flex: 1;
+}
+
+.message-time {
+    font-size: 0.75rem;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+.message img {
+    max-width: 100%;
+    height: auto;
+    margin-top: 8px;
+    border-radius: 4px;
+}
+
+.message a {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.chat-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6b7280;
+    font-size: 1.25rem;
+}
+
+.chat-container {
+    height: calc(100vh - 80px - 60px);
+    display: flex;
+    flex-direction: column;
+}
+
+.chat-header {
+    position: sticky;
+    top: 0;
+    background-color: inherit;
+    z-index: 10;
+    padding: 8px 0;
+    text-align: center;
+}
+
+.chat-area {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 0;
+}
+
+.message-input {
+    position: fixed;
+    bottom: 0;
+    left: 25%;
+    right: 0;
+    background-color: inherit;
+    padding: 8px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.message-input .flex.items-center {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.message-input .flex-grow {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.message-input input[type="text"] {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+#chat-search {
+    width: 100%;
+}
+
+.hidden {
+    display: none;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background-color: #ffffff;
+    padding: 16px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    color: #000000;
+}
+
+.dark .modal-content {
+    background-color: #1f2937;
+    color: #ffffff;
+}
+
+.modal-content input {
+    background-color: #f3f4f6;
+    color: #000000;
+}
+
+.dark .modal-content input {
+    background-color: #374151;
+    color: #ffffff;
+}
+
+.modal-content button {
+    color: #ffffff;
+}
+
+.fixed-header {
+    position: sticky;
+    top: 0;
+    background-color: inherit;
+    z-index: 10;
+    padding-bottom: 8px;
+}
+
+.chat-list {
+    overflow-y: auto;
+    height: calc(100vh - 185px);
+    min-height: 0;
+    margin-top: 8px;
+    padding-bottom: 32px;
+}
+
+.w-1\/4 {
+    overflow: hidden;
+    height: 100%;
+}
+
+.unread .unread-indicator {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.unread-indicator {
+    display: none;
+}
+
+.header-title {
+    flex: 1;
+    text-align: center;
+}
+
+.file-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: #e5e7eb;
+    color: #000000;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.dark .file-item {
+    background-color: #374151;
+    color: #ffffff;
+}
+
+.file-item button {
+    margin-left: 4px;
+    background-color: #ef4444;
+    color: #ffffff;
+    border: none;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
