@@ -175,5 +175,9 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+<<<<<<< HEAD
 .uploads/
 >>>>>>> 2ae0dc3 (upd)
+=======
+/uploads/
+>>>>>>> d014125 (upd)
